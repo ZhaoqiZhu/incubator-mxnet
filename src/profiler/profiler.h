@@ -1152,6 +1152,14 @@ struct ProfileOperator : public ProfileEvent {
       , attributes_(attributes) {
     SetCategories(domain_.name());
   }
+
+  explicit inline ProfileOperator(const char *name, ProfileDomain& domain, Attributes *attributes)
+    : ProfileEvent(name)
+      , as_task_(name, &domain)
+      , name_(name)
+      , attributes_(attributes) {
+    SetCategories(domain.name());
+  }
   /*!
    * \brief Start the profiling scope
    * \param dev_type Device type that the profiling will occur on
@@ -1161,13 +1169,17 @@ struct ProfileOperator : public ProfileEvent {
     dev_type_ = dev_type;
     dev_id_ = dev_id;
     ProfileEvent::start();
-    as_task_.start();
+    if (strcmp(name_.c_str(), "Custom") && strcmp(name_.c_str(), "CustomOperator")) {
+      as_task_.start();
+    }
   }
   /*!
    * \brief Stop the profiling scope
    */
   void stop() override {
-    as_task_.stop();
+    if (strcmp(name_.c_str(), "Custom") && strcmp(name_.c_str(), "CustomOperator")) {
+      as_task_.stop();
+    }
     ProfileEvent::stop();
   }
 

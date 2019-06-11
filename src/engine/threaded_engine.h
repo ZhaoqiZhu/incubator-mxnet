@@ -43,6 +43,7 @@
 #include "../profiler/profiler.h"
 #include "./openmp.h"
 #include "../common/object_pool.h"
+#include "../profiler/custom_op_profiler.h"
 
 namespace mxnet {
 namespace engine {
@@ -355,11 +356,31 @@ class ThreadedEngine : public Engine {
       if (profiler_->AggregateEnabled()) {
         attrs.reset(new profiler::ProfileOperator::Attributes());
       }
-      const Context& ctx = opr_block->ctx;
-      opr_block->opr_profile.reset(new profiler::ProfileOperator(threaded_opr->opr_name,
+      const Context& ctx = opr_block->ctx;    
+      if (std::string(threaded_opr->opr_name).find("::") != std::string::npos) {
+        opr_block->opr_profile.reset(new profiler::ProfileOperator(threaded_opr->opr_name,
+                                                                 profiler::custom_op_domain,
                                                                  attrs.release()));
-      opr_block->opr_profile->start(ctx.dev_type, ctx.dev_id);
+        opr_block->opr_profile->start(ctx.dev_type, ctx.dev_id);
+      }
+      // else if (std::string(threaded_opr->opr_name) == "Custom" ||
+      //         std::string(threaded_opr->opr_name) == "CustomOperator" ){
+      //   opr_block->opr_profile.reset(new profiler::ProfileOperator(threaded_opr->opr_name,
+      //                                                            attrs.release()));
+      //   // LOG(WARNING) << "in threaded engine" << std::this_thread::get_id();
+      //   // profiler::CustomOpProfiler::Get()->delayed_profile_operator_[std::this_thread::get_id()] = std::make_shared<profiler::ProfileOperator> (threaded_opr->opr_name,
+      //   //                                                          profiler::custom_op_domain,
+      //   //                                                          attrs.release());
+      //   // profiler::CustomOpProfiler::Get()->tid_to_dev_type_[std::this_thread::get_id()] = ctx.dev_type;
+      //   // profiler::CustomOpProfiler::Get()->tid_to_dev_id_[std::this_thread::get_id()] = ctx.dev_id;
+      // }
+      else {
+        opr_block->opr_profile.reset(new profiler::ProfileOperator(threaded_opr->opr_name,
+                                                                 attrs.release()));
+        opr_block->opr_profile->start(ctx.dev_type, ctx.dev_id);
+      }
     }
+
     CallbackOnComplete callback =
         this->CreateCallback(ThreadedEngine::OnCompleteStatic, opr_block);
     const bool debug_info = (engine_info_ && debug_push_opr_ == opr_block);
