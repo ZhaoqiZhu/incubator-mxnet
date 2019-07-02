@@ -43,6 +43,7 @@
 #include "../operator_common.h"
 #include "../linalg.h"
 #include "./im2col.h"
+#include "../../common/tensor_inspector.h"
 
 
 namespace mxnet {
@@ -192,6 +193,9 @@ class ConvolutionOp {
       Shape3(group_, M, K), s);
     Tensor<xpu, 4, DType> output_4d = out_data[conv::kOut].get_with_shape<xpu, 4, DType>(
       Shape4(num_, group_, M, N), s);
+
+    TensorInspector<xpu, 3, DType> ti(weight_3d);
+    ti.to_string();
 
     // no need to allocating memory and reordering in memory
     if (is_1x1_) {
