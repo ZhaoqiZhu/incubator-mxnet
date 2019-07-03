@@ -32,6 +32,7 @@
 #include "../convolution-inl.h"
 #include "./mkldnn_ops-inl.h"
 #include "./mkldnn_base-inl.h"
+#include "../../../../tests/cpp/include/test_util.h"
 
 namespace mxnet {
 namespace op {
