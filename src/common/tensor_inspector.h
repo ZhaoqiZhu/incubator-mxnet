@@ -113,7 +113,7 @@ class TensorInspector {
   std::string to_string(const RunContext& ctx) {
     std::stringstream ss;
     MSHADOW_TYPE_SWITCH(tb_.type_flag_, DType, {
-      to_string_helper(ss, ctx);
+      to_string_helper<DType>(ss, ctx);
     });
     return ss.str();
   }
