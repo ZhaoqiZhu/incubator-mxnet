@@ -194,9 +194,12 @@ class ConvolutionOp {
     Tensor<xpu, 4, DType> output_4d = out_data[conv::kOut].get_with_shape<xpu, 4, DType>(
       Shape4(num_, group_, M, N), s);
 
-    TensorInspector<xpu, 3, DType> ti(weight_3d);
-    ti.to_string();
-
+    TensorInspector ts(in_data[conv::kWeight]);
+    ts.print_string();
+    // ts.to_string_helper<DType>(std::cout);
+    // TensorInspector<xpu, 3, DType> ti(weight_3d);
+    // ti.interactive_print();
+    // ti.check_value(build_checker(CheckerType::NegativeChecker));
     // no need to allocating memory and reordering in memory
     if (is_1x1_) {
       Tensor<xpu, 4, DType> input_4d = in_data[conv::kData].get_with_shape<xpu, 4, DType>(
