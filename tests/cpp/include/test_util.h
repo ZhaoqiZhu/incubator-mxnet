@@ -26,7 +26,7 @@
 #ifndef TEST_UTIL_H_
 #define TEST_UTIL_H_
 
-// #include <gtest/gtest.h>
+#include <gtest/gtest.h>
 #include <mxnet/storage.h>
 #include <mxnet/ndarray.h>
 #include <string>
