@@ -34,6 +34,7 @@
 #include "../convolution-inl.h"
 #include "./cudnn_algoreg-inl.h"
 #include "../../../common/cuda_utils.h"
+#include "../../../common/tensor_inspector.h"
 
 namespace mxnet {
 namespace op {
@@ -135,6 +136,9 @@ class CuDNNConvolutionOp {
     Stream<gpu> *s = ctx.get_stream<gpu>();
     Tensor<gpu, 1, DType> workspace = AllocateTempWorkspace(ctx, forward_workspace_byte_);
     size_t workspace_size = TensorSizeBytes(workspace);
+    
+    TensorInspector ti(workspace);
+    workspace.print_string();    
 
     // I/O's should have 2 more dims than the kernel dim
     DType *data_ptr = GetNdPtr(in_data[conv::kData], param_.kernel.ndim() + 2, s);

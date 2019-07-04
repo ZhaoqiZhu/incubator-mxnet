@@ -106,24 +106,24 @@ class TensorInspector {
 
   TensorInspector(const TBlob& tb) : tb_(tb){}
 
-  void print_string() {
+  void print_string(const RunContext& ctx) {
     std::cout << to_string() << std::endl;
   }
 
-  std::string to_string() {
+  std::string to_string(const RunContext& ctx) {
     std::stringstream ss;
     MSHADOW_TYPE_SWITCH(tb_.type_flag_, DType, {
-      to_string_helper(ss);
+      to_string_helper(ss, ctx);
     });
     return ss.str();
   }
 
   template<typename DType MSHADOW_DEFAULT_DTYPE, typename StreamType>
-  void to_string_helper(StreamType& os) {
+  void to_string_helper(StreamType& os, const RunContext& ctx) {
     
 #if MXNET_USE_CUDA
-    if (blob.dev_mask() == gpu::kDevMask) {
-      TensorInspector(CAccessAsCPU(ctx, blob, false)()).to_string_helper<DType>(os);
+    if (tb_.dev_mask() == gpu::kDevMask) {
+      TensorInspector(test::CAccessAsCPU(ctx, tb_, false)()).to_string_helper<DType>(os);
       return;
     }
 #endif  // MXNET_USE_CUDA
