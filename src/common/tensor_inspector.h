@@ -123,7 +123,7 @@ class TensorInspector {
     
 #if MXNET_USE_CUDA
     if (tb_.dev_mask() == gpu::kDevMask) {
-      TensorInspector(test::CAccessAsCPU(ctx, tb_, false)()).to_string_helper<DType>(os);
+      TensorInspector(test::CAccessAsCPU(ctx, tb_, false)()).to_string_helper<DType>(os, ctx);
       return;
     }
 #endif  // MXNET_USE_CUDA
