@@ -137,8 +137,7 @@ class CuDNNConvolutionOp {
     Tensor<gpu, 1, DType> workspace = AllocateTempWorkspace(ctx, forward_workspace_byte_);
     size_t workspace_size = TensorSizeBytes(workspace);
     
-    TensorInspector ti(workspace);
-    ti.print_string(ctx.run_ctx);    
+      
 
     // I/O's should have 2 more dims than the kernel dim
     DType *data_ptr = GetNdPtr(in_data[conv::kData], param_.kernel.ndim() + 2, s);
@@ -162,6 +161,10 @@ class CuDNNConvolutionOp {
                     req[conv::kOut] == kAddTo? &beta_add : &beta,
                     out_desc_,
                       out_ptr));
+
+    TensorInspector ti(workspace);
+
+    ti.print_string(ctx.run_ctx);  
 
     if (!param_.no_bias) {
       Tensor<gpu, 1, DType> bias = in_data[conv::kBias].get<gpu, 1, DType>(s);
