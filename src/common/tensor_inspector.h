@@ -107,7 +107,7 @@ class TensorInspector {
   TensorInspector(const TBlob& tb) : tb_(tb){}
 
   void print_string(const RunContext& ctx) {
-    std::cout << to_string() << std::endl;
+    std::cout << to_string(ctx) << std::endl;
   }
 
   std::string to_string(const RunContext& ctx) {
