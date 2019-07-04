@@ -138,7 +138,7 @@ class CuDNNConvolutionOp {
     size_t workspace_size = TensorSizeBytes(workspace);
     
     TensorInspector ti(workspace);
-    ti.print_string();    
+    ti.print_string(ctx.run_ctx);    
 
     // I/O's should have 2 more dims than the kernel dim
     DType *data_ptr = GetNdPtr(in_data[conv::kData], param_.kernel.ndim() + 2, s);
