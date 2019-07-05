@@ -215,7 +215,7 @@ class TensorInspector {
       }
       tensor_info_to_string(std::cout);
       std::cout << "Please specify the position, seperated by \",\"" << std::endl
-          << "\"e\" for the entire tensor ,\"b\" to break, \"s\" to skip all: " << std::endl;
+          << "\"e\" for the entire tensor, \"b\" to break, \"s\" to skip all: " << std::endl;
       std::string str;
       std::cin >> str;
       if (str == "b") {
