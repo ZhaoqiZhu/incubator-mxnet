@@ -62,7 +62,7 @@ mkldnn::convolution_forward::primitive_desc GetConvFwdImpl(const MKLDNNConvFullP
   auto bias_md_ptr = bias ? &bias_md : nullptr;
 
   TensorInspector ti(weights);
-  ti.print_string();
+  ti.print_string(RunContext());
 
   mkldnn::memory::dims strides(param.conv_param.kernel.ndim());
   mkldnn::memory::dims padding(param.conv_param.kernel.ndim());
