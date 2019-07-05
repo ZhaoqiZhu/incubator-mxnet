@@ -238,8 +238,7 @@ class TensorInspector {
 #if MXNET_USE_CUDA
     if (tb_.dev_mask() == gpu::kDevMask) {
       std::cout << "BBBOOOOMMMM4" <<std::endl;
-      TensorInspector(test::CAccessAsCPU(ctx, tb_, false)()).check_value_helper<DType>(ctx, checker);
-      return;
+      return TensorInspector(test::CAccessAsCPU(ctx, tb_, false)()).check_value_helper<DType>(ctx, checker);
     }
 #endif // MXNET_USE_CUDA
     std::vector<std::vector<int>> ret;
@@ -281,7 +280,7 @@ class TensorInspector {
             };
     }
     return [] (DType x) {return true;};
-  };
+  }
 
  public:
   template<typename Device, int dimension,
@@ -316,13 +315,14 @@ class TensorInspector {
     MSHADOW_TYPE_SWITCH(tb_.type_flag_, DType, {
       return check_value_helper<DType>(ctx, checker);
     });
+    return std::vector<std::vector<int>>();
   }
 
   std::vector<std::vector<int>> check_value(const RunContext& ctx, CheckerType ct) {
     MSHADOW_TYPE_SWITCH(tb_.type_flag_, DType, {
       return check_value_helper<DType>(ctx, build_checker<DType>(ct));
-
     });
+    return std::vector<std::vector<int>>();
   }
 
 };
