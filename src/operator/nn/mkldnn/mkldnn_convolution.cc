@@ -31,7 +31,8 @@
 #include "./mkldnn_base-inl.h"
 #include "./mkldnn_convolution-inl.h"
 #include "../../../common/tensor_inspector.h"
-#include <unistd.h>
+#include <thread>      
+#include <chrono>
 
 namespace mxnet {
 namespace op {
@@ -392,7 +393,7 @@ void MKLDNNConvolutionForwardFullFeature(const MKLDNNConvFullParam &param,
   if (data.IsView() && data.IsMKLDNNData())
     data = data.Reorder2Default();
 
-  usleep(1000000);
+  std::this_thread::sleep_for (std::chrono::seconds(1));
 
   TensorInspector ti(data);
   ti.interactive_print(ctx.run_ctx, "mkldnn conv");
