@@ -163,8 +163,8 @@ class CuDNNConvolutionOp {
                       out_ptr));
 
     TensorInspector ti(workspace);
-
-    ti.print_string(ctx.run_ctx);  
+    ti.interactive_print(ctx.run_ctx, "cudnn conv");
+    // ti.print_string(ctx.run_ctx);  
 
     if (!param_.no_bias) {
       Tensor<gpu, 1, DType> bias = in_data[conv::kBias].get<gpu, 1, DType>(s);

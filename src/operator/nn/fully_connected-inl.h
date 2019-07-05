@@ -99,7 +99,7 @@ void FCForward(const OpContext &ctx, const FullyConnectedParam &param,
   Tensor<xpu, 2, DType> data, out;
 
   TensorInspector ts(wmat);
-  ts.print_string(ctx.run_ctx);
+  // ts.interactive_print(ctx.run_ctx);
 
   if (!param.flatten) {
     data = in_data[fullc::kData].get_with_shape<xpu, 2, DType>(
