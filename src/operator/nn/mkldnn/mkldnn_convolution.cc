@@ -392,7 +392,7 @@ void MKLDNNConvolutionForwardFullFeature(const MKLDNNConvFullParam &param,
   if (data.IsView() && data.IsMKLDNNData())
     data = data.Reorder2Default();
 
-  usleep(1000);
+  usleep(1000000);
 
   TensorInspector ti(data);
   ti.interactive_print(ctx.run_ctx, "mkldnn conv");
