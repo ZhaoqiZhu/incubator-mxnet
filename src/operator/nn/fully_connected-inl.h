@@ -37,6 +37,7 @@
 #include "../linalg.h"
 #include "../../common/utils.h"
 #include "../tensor/broadcast_reduce_op.h"
+#include "../../common/tensor_inspector.h"
 
 namespace mxnet {
 namespace op {
@@ -96,6 +97,10 @@ void FCForward(const OpContext &ctx, const FullyConnectedParam &param,
 
   Tensor<xpu, 2, DType> wmat = in_data[fullc::kWeight].get<xpu, 2, DType>(s);
   Tensor<xpu, 2, DType> data, out;
+
+  TensorInspector ts(wmat);
+  ts.print_string(ctx.run_ctx);
+
   if (!param.flatten) {
     data = in_data[fullc::kData].get_with_shape<xpu, 2, DType>(
         Shape2(ishape.ProdShape(0, ishape.ndim()-1), ishape[ishape.ndim()-1]), s);

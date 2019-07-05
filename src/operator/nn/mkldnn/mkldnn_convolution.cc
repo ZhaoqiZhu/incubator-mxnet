@@ -30,6 +30,7 @@
 #include "./mkldnn_ops-inl.h"
 #include "./mkldnn_base-inl.h"
 #include "./mkldnn_convolution-inl.h"
+#include "../../../common/tensor_inspector.h"
 
 namespace mxnet {
 namespace op {
@@ -59,6 +60,9 @@ mkldnn::convolution_forward::primitive_desc GetConvFwdImpl(const MKLDNNConvFullP
            : mkldnn::memory::desc{
              {}, mkldnn::memory::data_type::data_undef, mkldnn::memory::format::any};
   auto bias_md_ptr = bias ? &bias_md : nullptr;
+
+  TensorInspector ti(weights);
+  ti.print_string();
 
   mkldnn::memory::dims strides(param.conv_param.kernel.ndim());
   mkldnn::memory::dims padding(param.conv_param.kernel.ndim());

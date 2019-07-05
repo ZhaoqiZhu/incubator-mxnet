@@ -102,9 +102,12 @@ class TensorInspector {
  public:
   template<typename Device, int dimension,
       typename DType MSHADOW_DEFAULT_DTYPE>
-  TensorInspector(const Tensor<Device, dimension, DType>& ts) : tb_(ts){}
+  TensorInspector(const Tensor<Device, dimension, DType>& ts) : tb_(ts) {}
 
-  TensorInspector(const TBlob& tb) : tb_(tb){}
+  TensorInspector(const TBlob& tb) : tb_(tb) {}
+
+  // Only works for kDefaultStorage
+  TensorInspector(const NDArray& arr) : tb_(arr.data()){}
 
   void print_string(const RunContext& ctx) {
     std::cout << to_string(ctx) << std::endl;

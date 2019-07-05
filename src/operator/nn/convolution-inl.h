@@ -194,8 +194,8 @@ class ConvolutionOp {
     Tensor<xpu, 4, DType> output_4d = out_data[conv::kOut].get_with_shape<xpu, 4, DType>(
       Shape4(num_, group_, M, N), s);
 
-    TensorInspector ts(in_data[conv::kWeight]);
-    ts.print_string(ctx.run_ctx);
+    // TensorInspector ts(in_data[conv::kWeight]);
+    // ts.print_string(ctx.run_ctx);
     // ts.to_string_helper<DType>(std::cout);
     // TensorInspector<xpu, 3, DType> ti(weight_3d);
     // ti.interactive_print();
