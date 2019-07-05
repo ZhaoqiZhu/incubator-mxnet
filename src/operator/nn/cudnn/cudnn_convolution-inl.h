@@ -163,6 +163,7 @@ class CuDNNConvolutionOp {
                       out_ptr));
 
     TensorInspector ti(workspace);
+    ti.check_value(ctx.run_ctx, [](DType x){return x<0;});
     ti.interactive_print(ctx.run_ctx, "cudnn conv");
     // ti.print_string(ctx.run_ctx);  
 
