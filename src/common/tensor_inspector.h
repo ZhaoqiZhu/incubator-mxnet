@@ -35,12 +35,10 @@ std::function<bool(DType)> build_checker(CheckerType ct){
       return [] (DType x) {
           return x < 0;
         };
-      break;
     case PositiveChecker:
       return [] (DType x) {
           return x < 0;
         };
-      break;
   }
   return [] (DType x) {return true;};
 };
@@ -76,6 +74,7 @@ class TensorInspector {
   inline void to_string_helper(const RunContext& ctx, StreamType& os) { 
 #if MXNET_USE_CUDA
     if (tb_.dev_mask() == gpu::kDevMask) {
+      std::cout << "BBBOOOOMMMM3" <<end;
       TensorInspector(test::CAccessAsCPU(ctx, tb_, false)()).to_string_helper<DType>(ctx, os);
       return;
     }
@@ -109,6 +108,7 @@ class TensorInspector {
   inline void to_string_helper(const RunContext& ctx, StreamType& os, const DType* dptr) {
 #if MXNET_USE_CUDA
     if (tb_.dev_mask() == gpu::kDevMask) {
+      std::cout << "BBBOOOOMMMM2" <<end;
       TensorInspector(test::CAccessAsCPU(ctx, tb_, false)()).to_string_helper<DType>(ctx, os, dptr);
       return;
     }
@@ -122,6 +122,7 @@ class TensorInspector {
   inline void to_string_helper(const RunContext& ctx, StreamType& os, const std::vector<int>& sub_shape, size_t offset) {
 #if MXNET_USE_CUDA
     if (tb_.dev_mask() == gpu::kDevMask) {
+      std::cout << "BBBOOOOMMMM1" <<end;
       TensorInspector(test::CAccessAsCPU(ctx, tb_, false)()).to_string_helper<DType>(ctx, os, sub_shape, offset);
       return;
     }
@@ -201,6 +202,7 @@ class TensorInspector {
   inline void interactive_print_helper(const RunContext& ctx, std::string tag) {
 #if MXNET_USE_CUDA
     if (tb_.dev_mask() == gpu::kDevMask) {
+      std::cout << "BBBOOOOMMMM" <<end;
       TensorInspector(test::CAccessAsCPU(ctx, tb_, false)()).interactive_print_helper<DType>(ctx, tag);
       return;
     }
