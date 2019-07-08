@@ -305,7 +305,7 @@ class TensorInspector {
         if (std::is_same<DType, float>::value || std::is_same<DType, double>::value ||
             std::is_same<DType, long double>::value) {
           return [] (DType x) {
-                return f != f;
+                return x != x;
               };
         } else {
           LOG(WARNING) << "NanChecker only applies to float types. " <<
