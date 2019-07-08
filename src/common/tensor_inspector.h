@@ -302,9 +302,10 @@ class TensorInspector {
               return x < 0;
             };
       case NanChecker:
-        if (std::is_same<DType, float>::value || std::is_same<DType, double>::value) {
+        if (std::is_same<DType, float>::value || std::is_same<DType, double>::value ||
+            std::is_same<DType, long double>::value) {
           return [] (DType x) {
-                return isnan(x);
+                return f != f;
               };
         } else {
           LOG(WARNING) << "NanChecker only applies to float types. " <<
