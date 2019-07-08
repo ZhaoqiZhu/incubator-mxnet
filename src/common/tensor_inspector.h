@@ -20,6 +20,7 @@ class InspectorManager {
     return im.get();
   }
 
+  std::mutex mutex_;
   bool interactive_print_skip_all_ = false;
   bool check_value_skip_all_ = false;
   std::unordered_map<std::string, int> interactive_print_tag_counter_;
@@ -194,6 +195,7 @@ class TensorInspector {
       return;
     }
 #endif // MXNET_USE_CUDA
+    std::lock_guard<std::mutex> lock(InspectorManager::get()->mutex_);
     InspectorManager::get()->interactive_print_tag_counter_[tag] += 1;
     while (!InspectorManager::get()->interactive_print_skip_all_) {
       std::cout << "----------Interactive Print----------" << std::endl;
@@ -270,23 +272,27 @@ class TensorInspector {
       }
     }
     ss << "]" << std::endl;
-    InspectorManager::get()->check_value_tag_counter_[tag] += 1;
-    while (interactive && !InspectorManager::get()->check_value_skip_all_) {
-      std::cout << "----------Value Check----------" << std::endl;
-      if (tag != "") {
-        std::cout << "Tag: " << tag << "  Visit: " << InspectorManager::get()->check_value_tag_counter_[tag] <<  std::endl;
-      }
-      std::cout << count << " value(s) found. \"p\" to print the coordinates, \"b\" to break, \"s\" to skip all: ";
-      std::string str;
-      std::cin >> str;
-      if (str == "b") {
-        break;
-      } else if (str == "p") {
-        std::cout << ss.str() << std::endl;
-      } else if (str == "s") {
-        InspectorManager::get()->check_value_skip_all_ = true;
+    if (interactive) {
+      std::lock_guard<std::mutex> lock(InspectorManager::get()->mutex_);
+       InspectorManager::get()->check_value_tag_counter_[tag] += 1;
+      while (!InspectorManager::get()->check_value_skip_all_) {
+        std::cout << "----------Value Check----------" << std::endl;
+        if (tag != "") {
+          std::cout << "Tag: " << tag << "  Visit: " << InspectorManager::get()->check_value_tag_counter_[tag] <<  std::endl;
+        }
+        std::cout << count << " value(s) found. \"p\" to print the coordinates, \"b\" to break, \"s\" to skip all: ";
+        std::string str;
+        std::cin >> str;
+        if (str == "b") {
+          break;
+        } else if (str == "p") {
+          std::cout << ss.str() << std::endl;
+        } else if (str == "s") {
+          InspectorManager::get()->check_value_skip_all_ = true;
+        }
       }
     }
+   
     return ret;
   }
 
