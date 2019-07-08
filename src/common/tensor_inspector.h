@@ -2,6 +2,7 @@
 #define MXNET_COMMON_TENSOR_INSPECTOR_H_
 
 #include <algorithm> 
+#include<cmath>
 #include "../../3rdparty/mshadow/mshadow/base.h"
 #include "../../tests/cpp/include/test_util.h"
 namespace mxnet{
@@ -19,13 +20,16 @@ class InspectorManager {
     return im.get();
   }
 
-  bool skip_all_ = false;
-  std::unordered_map<std::string, int> tag_counter_;
+  bool interactive_print_skip_all_ = false;
+  bool check_value_skip_all_ = false;
+  std::unordered_map<std::string, int> interactive_print_tag_counter_;
+  std::unordered_map<std::string, int> check_value_tag_counter_;
 };
 
 enum CheckerType {
   NegativeChecker,
-  PositiveChecker
+  PositiveChecker,
+  NanChecker
 };
 
 class TensorInspector {
@@ -190,11 +194,12 @@ class TensorInspector {
       return;
     }
 #endif // MXNET_USE_CUDA
-    InspectorManager::get()->tag_counter_[tag] += 1;
-    while (!InspectorManager::get()->skip_all_) {
+    InspectorManager::get()->interactive_print_tag_counter_[tag] += 1;
+    while (!InspectorManager::get()->interactive_print_skip_all_) {
       std::cout << "----------Interactive Print----------" << std::endl;
       if (tag != "") {
-        std::cout << "Tag: " << tag << "  Visit: " << InspectorManager::get()->tag_counter_[tag] <<  std::endl;
+        std::cout << "Tag: " << tag << "  Visit: " <<
+            InspectorManager::get()->interactive_print_tag_counter_[tag] <<  std::endl;
       }
       tensor_info_to_string(std::cout);
       std::cout << "Please specify the position, seperated by \",\"" << std::endl
@@ -207,7 +212,7 @@ class TensorInspector {
         to_string_helper<DType>(ctx, std::cout);
         continue;
       } else if (str == "s") {
-        InspectorManager::get()->skip_all_ = true;
+        InspectorManager::get()->interactive_print_skip_all_ = true;
         break;
       }
       std::vector<int> pos;
@@ -234,7 +239,8 @@ class TensorInspector {
   }
 
   template<typename DType MSHADOW_DEFAULT_DTYPE>
-  inline std::vector<std::vector<int>> check_value_helper(const RunContext& ctx, const std::function<bool(DType)>& checker) {
+  inline std::vector<std::vector<int>> check_value_helper(const RunContext& ctx,
+      const std::function<bool(DType)>& checker, bool interactive, std::string tag) {
 #if MXNET_USE_CUDA
     if (tb_.dev_mask() == gpu::kDevMask) {
       std::cout << "BBBOOOOMMMM4" <<std::endl;
@@ -242,24 +248,44 @@ class TensorInspector {
     }
 #endif // MXNET_USE_CUDA
     std::vector<std::vector<int>> ret;
-    std::cout << "[";
+    int count = 0;
+    std::stringstream ss;
+    ss << "[";
     bool first_pass = true;
     for (size_t i = 0; i < tb_.shape_.Size(); i++) {
       if (checker(tb_.dptr<DType>()[i])) {
+        count += 1;
         if (!first_pass) {
-          std::cout  << ", ";
+          ss  << ", ";
         }
         first_pass = false;
         std::vector<int> coords = index_to_coordinates(i);
-        std::cout << "(" << coords[0];
+        ss << "(" << coords[0];
         for (size_t i = 1; i < coords.size(); i++) {
-          std::cout << ", " << coords[i];
+          ss << ", " << coords[i];
         }
-        std::cout << ")";
+        ss << ")";
         ret.push_back(coords);
       }
     }
-    std::cout << "]" << std::endl;
+    ss << "]" << std::endl;
+    InspectorManager::get()->check_value_tag_counter_[tag] += 1;
+    while (interactive && !InspectorManager::get()->check_value_skip_all_) {
+      std::cout << "----------Value Check----------" << std::endl;
+      if (tag != "") {
+        std::cout << "Tag: " << tag << "  Visit: " << InspectorManager::get()->check_value_tag_counter_[tag] <<  std::endl;
+      }
+      std::cout << count << " value(s) found. \"p\" to print the coordinates, \"b\" to break, \"s\" to skip all: ";
+      std::string str;
+      std::cin >> str;
+      if (str == "b") {
+        break;
+      } else if (str == "p") {
+        std::cout << ss.str() << std::endl;
+      } else if (str == "s") {
+        InspectorManager::get()->check_value_skip_all_ = true;
+      }
+    }
     return ret;
   }
 
@@ -274,12 +300,22 @@ class TensorInspector {
         return [] (DType x) {
               return x < 0;
             };
+      case NanChecker:
+        if (std::is_same<DType, float>::value || std::is_same<DType, double>::value) {
+          return [] (DType x) {
+                return isnan(x);
+              };
+        } else {
+          LOG(WARNING) << "NanChecker only applies to float types. " <<
+              "Lambda will always return false.";
+        }
+        break;
       default:
         return [] (DType x) {
-              return true;
+              return false;
             };
     }
-    return [] (DType x) {return true;};
+    return [] (DType x) {return false;};
   }
 
  public:
@@ -311,16 +347,18 @@ class TensorInspector {
   }
 
   template<typename ValueChecker>
-  std::vector<std::vector<int>> check_value(const RunContext& ctx, const ValueChecker& checker) {
+  std::vector<std::vector<int>> check_value(const RunContext& ctx, const ValueChecker& checker,
+      bool interactive = false, std::string tag = "") {
     MSHADOW_TYPE_SWITCH(tb_.type_flag_, DType, {
-      return check_value_helper<DType>(ctx, checker);
+      return check_value_helper<DType>(ctx, checker, interactive, tag);
     });
     return std::vector<std::vector<int>>();
   }
 
-  std::vector<std::vector<int>> check_value(const RunContext& ctx, CheckerType ct) {
+  std::vector<std::vector<int>> check_value(const RunContext& ctx, CheckerType ct,
+      bool interactive = false, std::string tag = "") {
     MSHADOW_TYPE_SWITCH(tb_.type_flag_, DType, {
-      return check_value_helper<DType>(ctx, build_checker<DType>(ct));
+      return check_value_helper<DType>(ctx, build_checker<DType>(ct), interactive, tag);
     });
     return std::vector<std::vector<int>>();
   }
