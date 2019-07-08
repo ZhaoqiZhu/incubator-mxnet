@@ -244,7 +244,8 @@ class TensorInspector {
 #if MXNET_USE_CUDA
     if (tb_.dev_mask() == gpu::kDevMask) {
       std::cout << "BBBOOOOMMMM4" <<std::endl;
-      return TensorInspector(test::CAccessAsCPU(ctx, tb_, false)()).check_value_helper<DType>(ctx, checker);
+      return TensorInspector(test::CAccessAsCPU(ctx, tb_, false)()).check_value_helper<DType>(ctx,
+          checker, interactive, tag);
     }
 #endif // MXNET_USE_CUDA
     std::vector<std::vector<int>> ret;
