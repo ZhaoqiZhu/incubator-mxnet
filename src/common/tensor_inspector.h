@@ -144,7 +144,8 @@ class TensorInspector {
   inline void to_string_helper(StreamType* os) {
 #if MXNET_USE_CUDA
     if (tb_.dev_mask() == gpu::kDevMask) {
-      TensorInspector(test::CAccessAsCPU(ctx_, tb_, false)()).to_string_helper<DType>(os);
+      TensorInspector(test::CAccessAsCPU(ctx_, tb_, false)(), ctx_)
+          .to_string_helper<DType>(os);
       return;
     }
 #endif  // MXNET_USE_CUDA
@@ -184,7 +185,7 @@ class TensorInspector {
   inline void to_string_helper(StreamType* os, const DType* dptr) {
 #if MXNET_USE_CUDA
     if (tb_.dev_mask() == gpu::kDevMask) {
-      TensorInspector(test::CAccessAsCPU(ctx_, tb_, false)())
+      TensorInspector(test::CAccessAsCPU(ctx_, tb_, false)(), ctx_)
           .to_string_helper<DType>(os, dptr);
       return;
     }
@@ -205,7 +206,7 @@ class TensorInspector {
   inline void to_string_helper(StreamType* os, const std::vector<int>& sub_shape, size_t offset) {
 #if MXNET_USE_CUDA
     if (tb_.dev_mask() == gpu::kDevMask) {
-      TensorInspector(test::CAccessAsCPU(ctx_, tb_, false)())
+      TensorInspector(test::CAccessAsCPU(ctx_, tb_, false)(), ctx_)
           .to_string_helper<DType>(os, sub_shape, offset);
       return;
     }
@@ -303,7 +304,7 @@ class TensorInspector {
   inline void interactive_print_helper(std::string tag) {
 #if MXNET_USE_CUDA
     if (tb_.dev_mask() == gpu::kDevMask) {
-      TensorInspector(test::CAccessAsCPU(ctx_, tb_, false)())
+      TensorInspector(test::CAccessAsCPU(ctx_, tb_, false)(), ctx_)
           .interactive_print_helper<DType>(tag);
       return;
     }
@@ -371,7 +372,7 @@ class TensorInspector {
       bool interactive, std::string tag) {
 #if MXNET_USE_CUDA
     if (tb_.dev_mask() == gpu::kDevMask) {
-      return TensorInspector(test::CAccessAsCPU(ctx_, tb_, false)())
+      return TensorInspector(test::CAccessAsCPU(ctx_, tb_, false)(), ctx_)
           .check_value_helper<DType>(checker, interactive, tag);
     }
 #endif  // MXNET_USE_CUDA
