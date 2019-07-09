@@ -163,7 +163,7 @@ class CuDNNConvolutionOp {
                       out_ptr));
 
     TensorInspector ti(workspace, ctx.run_ctx);
-    ti.check_value([](DType x){return x<0;});
+    ti.check_value(CheckerType::NormalChecker, true, "cudnn normal check");
     ti.interactive_print("cudnn conv");
     // ti.print_string(ctx.run_ctx);  
 
