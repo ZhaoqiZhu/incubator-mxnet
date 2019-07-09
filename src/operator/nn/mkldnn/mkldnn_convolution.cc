@@ -391,8 +391,8 @@ void MKLDNNConvolutionForwardFullFeature(const MKLDNNConvFullParam &param,
   if (data.IsView() && data.IsMKLDNNData())
     data = data.Reorder2Default();
 
-  TensorInspector ti(data);
-  ti.interactive_print(ctx.run_ctx, "mkldnn conv");
+  TensorInspector ti(data, ctx.run_ctx);
+  ti.interactive_print("mkldnn conv");
 
   auto weight = in_data[conv::kWeight];
   if (weight.IsView() && weight.IsMKLDNNData())
