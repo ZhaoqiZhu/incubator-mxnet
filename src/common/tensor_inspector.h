@@ -554,6 +554,9 @@ class TensorInspector {
       dict += ',';
       dict += std::to_string(tb_.shape_[i]);
     }
+    if (tb_.ndim() == 1) {
+       dict += ",";
+    }
     dict += ")} ";
     int padding_size = 64 - ((10 + dict.size()) % 64);
     dict += std::string(padding_size, ' ');
