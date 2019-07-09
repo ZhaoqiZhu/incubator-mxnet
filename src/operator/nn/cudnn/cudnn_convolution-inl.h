@@ -164,7 +164,8 @@ class CuDNNConvolutionOp {
 
     TensorInspector ti(workspace, ctx.run_ctx);
     ti.check_value(CheckerType::NormalChecker, true, "cudnn normal check");
-    ti.interactive_print("cudnn conv");
+    ti.dump_value("abc");
+    // ti.interactive_print("cudnn conv");
     // ti.print_string(ctx.run_ctx);  
 
     if (!param_.no_bias) {

@@ -196,8 +196,9 @@ class ConvolutionOp {
 
     TensorInspector ti(in_data[conv::kWeight], ctx.run_ctx);
 
-    ti.check_value(CheckerType::NormalChecker, true, "DDDOOOOO");
-    ti.interactive_print();
+    // ti.check_value(CheckerType::NormalChecker, true, "DDDOOOOO");
+    // ti.interactive_print();
+    // ti.dump_value("abc");
 
     // TensorInspector<xpu, 3, DType> ti(weight_3d);
     // ti.interactive_print();
