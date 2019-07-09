@@ -319,7 +319,7 @@ class TensorInspector {
       }
       tensor_info_to_string(&std::cout);
       std::cout << "Please specify the position, seperated by \",\"" << std::endl
-          << "\"e\" for the entire tensor, \"b\" to break, \"s\" to skip all: " << std::endl;
+          << "\"e\" for the entire tensor, \"b\" to break, \"s\" to skip all: ";
       std::string str;
       std::cin >> str;
       if (str == "b") {
@@ -359,24 +359,23 @@ class TensorInspector {
   }
 
   /*!
-   * \brief check/validate the values within the tensor, return the coordinates
+   * \brief check/validate the values within the tensor, find the coordinates
    * where the lambda evaluates to true
    * \tparam DType the data type
+   * \param ret a vector of coordinates which itself is a vector of int; calculated here
    * \param checker the lambda function to check each value of within the tensor
    * \param interactive wherether to allow the user to interactively check the coordinates
    * \param tag the name given to this call
    */
   template<typename DType MSHADOW_DEFAULT_DTYPE>
-  inline std::vector<std::vector<int>>
-      check_value_helper(const std::function<bool(DType)>& checker,
-      bool interactive, std::string tag) {
+  inline void check_value_helper(std::vector<std::vector<int>>* ret,
+      const std::function<bool(DType)>& checker,bool interactive, std::string tag) {
 #if MXNET_USE_CUDA
     if (tb_.dev_mask() == gpu::kDevMask) {
       return TensorInspector(test::CAccessAsCPU(ctx_, tb_, false)(), ctx_)
-          .check_value_helper<DType>(checker, interactive, tag);
+          .check_value_helper<DType>(ret, checker, interactive, tag);
     }
 #endif  // MXNET_USE_CUDA
-    std::vector<std::vector<int>> ret;
     int count = 0;
     std::stringstream ss;
     ss << "[";
@@ -394,7 +393,7 @@ class TensorInspector {
           ss << ", " << coords[i];
         }
         ss << ")";
-        ret.push_back(coords);
+        ret->push_back(coords);
       }
     }
     ss << "]" << std::endl;
@@ -420,7 +419,6 @@ class TensorInspector {
         }
       }
     }
-    return ret;
   }
 
   /*!
@@ -596,12 +594,13 @@ class TensorInspector {
    * \param tag the name given to this call
    */
   template<typename ValueChecker>
-  std::vector<std::vector<int>> check_value(const ValueChecker& checker, bool interactive = false,
+  inline std::vector<std::vector<int>> check_value(const ValueChecker& checker, bool interactive = false,
       std::string tag = "") {
+    std::vector<std::vector<int>> ret;
     MSHADOW_TYPE_SWITCH(tb_.type_flag_, DType, {
-      return check_value_helper<DType>(checker, interactive, tag);
+      check_value_helper<DType>(&ret, checker, ret, interactive, tag);
     });
-    return std::vector<std::vector<int>>();
+    return ret;
   }
 
   /*!
@@ -611,12 +610,13 @@ class TensorInspector {
    * \param interactive wherether to allow the user to interactively check the coordinates
    * \param tag the name given to this call
    */
-  std::vector<std::vector<int>> check_value(CheckerType ct, bool interactive = false,
+  inline std::vector<std::vector<int>> check_value(CheckerType ct, bool interactive = false,
       std::string tag = "") {
+    std::vector<std::vector<int>> ret;
     MSHADOW_TYPE_SWITCH(tb_.type_flag_, DType, {
-      return check_value_helper<DType>(build_checker<DType>(ct), interactive, tag);
+      check_value_helper<DType>(&ret, build_checker<DType>(ct), interactive, tag);
     });
-    return std::vector<std::vector<int>>();
+    return ret;
   }
 };
 
