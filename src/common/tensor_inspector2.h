@@ -37,6 +37,54 @@
 
 namespace mxnet {
 
+namespace static_if_detail {
+
+struct identity {
+    template<typename T>
+    T operator()(T&& x) const {
+        return std::forward<T>(x);
+    }
+};
+
+template<bool Cond>
+struct statement {
+    template<typename F>
+    void then(const F& f){
+        f();
+    }
+
+    template<typename F>
+    void else_(const F&){}
+};
+
+template<>
+struct statement<false> {
+    template<typename F>
+    void then(const F&){}
+
+    template<typename F>
+    void else_(const F& f){
+        f();
+    }
+};
+
+} //end of namespace static_if_detail
+
+template<bool Cond, typename F>
+static_if_detail::statement<Cond> static_if(F const& f){
+    static_if_detail::statement<Cond> if_;
+    if_.then(f);
+    return if_;
+}
+
+#define IF_FLOAT_TYPE(DType, IF, ELSE) \
+  static_if<std::is_same<DType, float>::value>([]{ \
+    {__VA_ARGS__} \
+  }).else_([] { \
+    LOG(WARNING) << "FiniteChecker only applies to float types. " << \
+        "Lambda will always return false."; \
+  }); \
+
 /*!
  * \brief This singleton struct mediates individual TensorInspector objects
  * so that we can control the global behavior from each of them
@@ -82,6 +130,12 @@ enum CheckerType {
   FiniteChecker,  // check if is finite, will always return false if DType is not a float type
   NormalChecker,  // check if is neither infinity nor NaN
 };
+
+template<typename DType MSHADOW_DEFAULT_DTYPE>
+DType get_inf() {
+  return (DType)1.0 / (DType)0.0;
+}
+
 
 /**
  *  _______                      _____                           _             
@@ -359,6 +413,7 @@ class TensorInspector {
     }
   }
 
+
   /*!
    * \brief build the lambda function, aka the checker, given its type
    * \tparam DType the data type
@@ -368,84 +423,55 @@ class TensorInspector {
   inline std::function<bool(DType)> build_checker(CheckerType ct) {
     switch (ct) {
       case NegativeChecker:
-        return [] (DType x) {
+        return [](DType x) {
               return x < 0;
             };
       case PositiveChecker:
-        return [] (DType x) {
+        return [](DType x) {
               return x > 0;
             };
       case ZeroChecker:
-        return [] (DType x) {
+        return [](DType x) {
               return x == 0;
             };
       case NaNChecker:
-        if (std::is_same<DType, float>::value || std::is_same<DType, double>::value ||
-            std::is_same<DType, mshadow::half::half_t>::value) {
-          return [] (DType x) {
-                return x != x;
-              };
-        } else {
-          LOG(WARNING) << "NaNChecker only applies to float types. " <<
-              "Lambda will always return false.";
-        }
-        break;
+          return [](DType x) {
+              return x != x;
+            };
       case InfChecker:
-        if (std::is_same<DType, float>::value || std::is_same<DType, double>::value ||
-            std::is_same<DType, mshadow::half::half_t>::value) {
-          return [] (DType x) {
-                return x == (DType)1.0 / (DType)0.0 || x == -(DType)1.0 / (DType)0.0;
-              };
-        } else {
-          LOG(WARNING) << "InfChecker only applies to float types. " <<
-              "Lambda will always return false.";
-        }
-        break;
+        // return float_type_only<DType>([](DType x) {
+        //       return x == (DType)1.0 / (DType)0.0 || x == -(DType)1.0 / (DType)0.0;
+        //     });
       case PositiveInfChecker:
-        if (std::is_same<DType, float>::value || std::is_same<DType, double>::value ||
-            std::is_same<DType, mshadow::half::half_t>::value) {
-          return [] (DType x) {
-                return x == (DType)1.0 / (DType)0.0;
-              };
-        } else {
-          LOG(WARNING) << "PositiveInfChecker only applies to float types. " <<
-              "Lambda will always return false.";
-        }
-        break;
+        return [] (DType x) {
+              static_if<std::is_same<DType, float>::value>([x](){return x == get_inf<DType>();}).else_([](){return false;});
+              return false;
+            };
+
+
+        // FLOAT_TYPE_ONLY(DType, {
+        //   return [](DType x) {
+        //         return x == (DType)1.0 / (DType)0.0;
+        //       };
+        // });
+        // break;
+        // return float_type_only<DType>([](DType x) {
+        //       return x == (DType)1.0 / (DType)0.0;
+        //     });
       case NegativeInfChecker:
-        if (std::is_same<DType, float>::value || std::is_same<DType, double>::value ||
-            std::is_same<DType, mshadow::half::half_t>::value) {
-          return [] (DType x) {
-                return x == -(DType)1.0 / (DType)0.0;
-              };
-        } else {
-          LOG(WARNING) << "NegativeInfChecker only applies to float types. " <<
-              "Lambda will always return false.";
-        }
-        break;
+        // return [] (DType x) {
+        //       static_if<std::is_same<DType, float>::value>([x]{return x == -(DType)1.0 / (DType)0.0;}).else_([]{return false;});
+        //       return false;
+        //     };
       case FiniteChecker:
-        if (std::is_same<DType, float>::value || std::is_same<DType, double>::value ||
-            std::is_same<DType, mshadow::half::half_t>::value) {
-          return [] (DType x) {
-                return x != (DType)1.0 / (DType)0.0 && x != -(DType)1.0 / (DType)0.0;
-              };
-        } else {
-          LOG(WARNING) << "FiniteChecker only applies to float types. " <<
-              "Lambda will always return false.";
-        }
-        break;
+        // return float_type_only<DType>([](DType x) {
+        //       return x != (DType)1.0 / (DType)0.0 && x != -(DType)1.0 / (DType)0.0;
+        //     });
       case NormalChecker:
-        if (std::is_same<DType, float>::value || std::is_same<DType, double>::value ||
-            std::is_same<DType, mshadow::half::half_t>::value) {
-          return [] (DType x) {
-                return x != (DType)1.0 / (DType)0.0 && x != -(DType)1.0 / (DType)0.0 &&
-                    x == x;
-              };
-        } else {
-          LOG(WARNING) << "NormalChecker only applies to float types. " <<
-              "Lambda will always return false.";
-        }
-        break;
+        // return float_type_only<DType>([](DType x) {
+        //       return x != (DType)1.0 / (DType)0.0 && x != -(DType)1.0 / (DType)0.0 &&
+        //           x == x;
+        //     });     
       default:
         return [] (DType x) {
               return false;
