@@ -391,13 +391,17 @@ void MKLDNNConvolutionForwardFullFeature(const MKLDNNConvFullParam &param,
   if (data.IsView() && data.IsMKLDNNData())
     data = data.Reorder2Default();
 
-  TensorInspector ti(data, ctx.run_ctx);
-  ti.check_value(CheckerType::NormalChecker, true, "MKLDNN CHECK");
-  ti.interactive_print("mkldnn conv");
+  // TensorInspector ti(data, ctx.run_ctx);
+  // ti.check_value(CheckerType::NormalChecker, true, "MKLDNN CHECK");
+  // ti.interactive_print("mkldnn conv");
 
   auto weight = in_data[conv::kWeight];
   if (weight.IsView() && weight.IsMKLDNNData())
     weight = weight.Reorder2Default();
+
+  TensorInspector ti(weight, ctx.run_ctx);
+  ti.check_value(CheckerType::NormalChecker, true, "MKLDNN CHECK2");
+  ti.interactive_print("mkldnn conv2");
 
   bool no_bias = param.conv_param.no_bias && !param.mkldnn_param.with_bn;
 
@@ -630,6 +634,10 @@ void MKLDNNConvolutionBackward(const nnvm::NodeAttrs& attrs, const OpContext &ct
   auto weight = inputs[conv::kWeight + 1];
   if (weight.IsView() && weight.IsMKLDNNData())
     weight = weight.Reorder2Default();
+
+  TensorInspector ti(weight, ctx.run_ctx);
+  ti.check_value(CheckerType::NormalChecker, true, "MKLDNN CHECK3");
+  ti.interactive_print("mkldnn conv3");
 
   const NDArray* bias = full_param.conv_param.no_bias ? nullptr : &inputs[conv::kBias + 1];
 
