@@ -128,6 +128,11 @@ class CuDNNActivationOp {
                                      shape_desc_,
                                      out.dptr_));
     #endif
+
+    TensorInspector ti(out, ctx.run_ctx);
+    ti.check_value(CheckerType::NormalChecker, true, "cudnn activation normal check");
+    // ti.dump_value("abc");
+    ti.interactive_print("cudnn activation");
   }
 
   // backward computation for cudnn activation operator. Note that for relu
