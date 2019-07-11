@@ -620,7 +620,7 @@ class TensorInspector {
    */
   template<typename Device, int dimension,
       typename DType MSHADOW_DEFAULT_DTYPE>
-  TensorInspector(const Tensor<Device, dimension, DType>& ts, const RunContext& ctx):
+  TensorInspector(const mshadow::Tensor<Device, dimension, DType>& ts, const RunContext& ctx):
       tb_(ts), ctx_(ctx) {}
 
   /*!
