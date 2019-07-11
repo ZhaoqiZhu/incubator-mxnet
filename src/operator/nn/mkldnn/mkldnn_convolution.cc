@@ -392,7 +392,7 @@ void MKLDNNConvolutionForwardFullFeature(const MKLDNNConvFullParam &param,
     data = data.Reorder2Default();
 
   TensorInspector ti(data, ctx.run_ctx);
-  ti.check_value(CheckerType::NormalChekcer, true, "DDDOOOOO");
+  ti.check_value(CheckerType::NormalChecker, true, "MKLDNN CHECK");
   ti.interactive_print("mkldnn conv");
 
   auto weight = in_data[conv::kWeight];
