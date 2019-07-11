@@ -29,6 +29,7 @@
 #include <algorithm>
 #include <vector>
 #include "../activation-inl.h"
+#include "../../../common/tensor_inspector.h"
 
 namespace mxnet {
 namespace op {
