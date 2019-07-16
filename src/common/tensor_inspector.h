@@ -110,9 +110,9 @@ class TensorInspector {
    * \param os stream object to output to
    */
   template<typename DType, typename StreamType>
-  inline void tensor_info_to_string(StreamType* os) {
+  void tensor_info_to_string(StreamType* os) {
     const int dimension = tb_.ndim();
-    *os << "<" << typeid(tb_.dptr<DType>()[0]).name() << " Tensor ";
+    *os << "<" << infer_type_string(typeid(DType)) << " Tensor ";
     *os << tb_.shape_[0];
     for (int i = 1; i < dimension; ++i) {
       *os << 'x' << tb_.shape_[i];
@@ -128,9 +128,9 @@ class TensorInspector {
    * \param shape the shape of the tensor
    */
   template<typename DType, typename StreamType>
-  inline void tensor_info_to_string(StreamType* os, const std::vector<int>& shape) {
+  void tensor_info_to_string(StreamType* os, const std::vector<index_t>& shape) {
     const int dimension = shape.size();
-    *os << "<" << typeid(tb_.dptr<DType>()[0]).name() << " Tensor ";
+    *os << "<" << infer_type_string(typeid(DType)) << " Tensor ";
     *os << shape[0];
     for (int i = 1; i < dimension; ++i) {
       *os << 'x' << shape[i];
@@ -139,13 +139,13 @@ class TensorInspector {
   }
 
   /*!
-   * \brief output the tensor in a structed format 
+   * \brief output the tensor in a structured format 
    * \tparam DType the data type
    * \tparam StreamType the type of the stream object
    * \param os stream object to output to
    */
   template<typename DType, typename StreamType>
-  inline void to_string_helper(StreamType* os) {
+  void to_string_helper(StreamType* os) {
 #if MXNET_USE_CUDA
     if (tb_.dev_mask() == gpu::kDevMask) {
       TensorInspector(test::CAccessAsCPU(ctx_, tb_, false)(), ctx_)
@@ -154,18 +154,18 @@ class TensorInspector {
     }
 #endif  // MXNET_USE_CUDA
     const int dimension = tb_.ndim();
-    std::vector<size_t> multiples;
-    size_t multiple = 1;
-    for (int i = dimension-1; i >= 0; --i) {
+    std::vector<index_t> offsets;
+    index_t multiple = 1;
+    for (int i = dimension - 1; i >= 0; --i) {
       multiple *= tb_.shape_[i];
-      multiples.push_back(multiple);
+      offsets.push_back(multiple);
     }
     *os << std::string(dimension, '[');
     *os << tb_.dptr<DType>()[0];
-    for (size_t i = 1; i < tb_.shape_.Size(); ++i) {
+    for (index_t i = 1; i < static_cast<index_t>(tb_.shape_.Size()); ++i) {
       int n = 0;
-      for (auto divisor : multiples) {
-        n += (i % divisor == 0);
+      for (auto off : offsets) {
+        n += (i % off == 0);
       }
       if (n) {
         *os << std::string(n, ']') << ", " <<  std::string(n, '[');
@@ -179,14 +179,14 @@ class TensorInspector {
   }
 
   /*!
-   * \brief output the tensor in a structed format 
+   * \brief output the tensor in a structured format 
    * \tparam DType the data type
    * \tparam StreamType the type of the stream object
    * \param os stream object to output to
    * \param dptr the data pointer
    */
   template<typename DType, typename StreamType>
-  inline void to_string_helper(StreamType* os, const DType* dptr) {
+  void to_string_helper(StreamType* os, const DType* dptr) {
 #if MXNET_USE_CUDA
     if (tb_.dev_mask() == gpu::kDevMask) {
       TensorInspector(test::CAccessAsCPU(ctx_, tb_, false)(), ctx_)
@@ -207,7 +207,7 @@ class TensorInspector {
    * \param offset the position of the first value of the desired part of the tensor
    */
   template<typename DType, typename StreamType>
-  inline void to_string_helper(StreamType* os, const std::vector<int>& sub_shape, size_t offset) {
+  void to_string_helper(StreamType* os, const std::vector<index_t>& sub_shape, index_t offset) {
 #if MXNET_USE_CUDA
     if (tb_.dev_mask() == gpu::kDevMask) {
       TensorInspector(test::CAccessAsCPU(ctx_, tb_, false)(), ctx_)
@@ -221,19 +221,19 @@ class TensorInspector {
       return;
     }
     const int dimension = sub_shape.size();
-    std::vector<size_t> multiples;
-    size_t multiple = 1;
-    for (int i = dimension-1; i >= 0; --i) {
+    std::vector<index_t> offsets;
+    index_t multiple = 1;
+    for (int i = dimension - 1; i >= 0; --i) {
       multiple *= sub_shape[i];
-      multiples.push_back(multiple);
+      offsets.push_back(multiple);
     }
     std::stringstream ss;
     *os << std::string(dimension, '[');
     *os << dptr[0];
-    for (size_t i = 1; i < multiple; ++i) {
+    for (index_t i = 1; i < multiple; ++i) {
       int n = 0;
-      for (auto divisor : multiples) {
-        n += (i % divisor == 0);
+      for (auto off : offsets) {
+        n += (i % off == 0);
       }
       if (n) {
         *os << std::string(n, ']') << ", " <<  std::string(n, '[');
@@ -253,19 +253,19 @@ class TensorInspector {
    * \param sub_shape the sub-shape of the desired part of the tensor; calculated here
    * \param offset the position of the first value of the desired part of the tensor; calculated here
    */
-  inline void print_locator(const std::vector<int>& pos, std::vector<int>* sub_shape,
-      size_t* offset) {
+  void print_locator(const std::vector<index_t>& pos, std::vector<index_t>* sub_shape,
+      index_t* offset) {
     const int dimension = tb_.ndim();
-    int sub_dim = dimension - pos.size();
+    const int sub_dim = dimension - pos.size();
     sub_shape->resize(sub_dim);
-    size_t multiple = 1;
+    index_t multiple = 1;
     for (int i = pos.size(), j = 0; i < dimension; ++i, ++j) {
       (*sub_shape)[j] = tb_.shape_[i];
       multiple *= tb_.shape_[i];
     }
-    size_t sum = 0;
-    size_t m = 1;
-    for (int i = pos.size()-1; i >= 0; --i) {
+    index_t sum = 0;
+    index_t m = 1;
+    for (int i = pos.size() - 1; i >= 0; --i) {
       sum += pos[i] * m;
       m *= tb_.shape_[i];
     }
@@ -278,21 +278,21 @@ class TensorInspector {
    * \param pos the coordinates of the desired part of the tensor, calculated here
    * \param str the string that represents the coordinate
    */
-  inline bool parse_position(std::vector<int>* pos, const std::string& str) {
+  bool parse_position(std::vector<index_t>* pos, const std::string& str) {
     const int dimension = tb_.ndim();
-    std::stringstream ss(str);
-    int i;
-    while (ss >> i) {
-      pos->push_back(i);
+    std::istringstream ss(str);
+    index_t n;
+    while (ss >> n) {
+      pos->push_back(n);
       if (ss.peek() == ',') {
         ss.ignore();
       }
     }
-    if (pos->size() > dimension) {
+    if (pos->size() > static_cast<size_t>(dimension)) {
       return false;
     }
     for (unsigned i = 0; i < pos->size(); ++i) {
-      if ((*pos)[i] > (tb_.shape_[i]-1)) {
+      if ((*pos)[i] > (tb_.shape_[i] - 1)) {
         return false;
       }
     }
@@ -305,7 +305,7 @@ class TensorInspector {
    * \param tag the name given to this call
    */
   template<typename DType>
-  inline void interactive_print_helper(std::string tag) {
+  void interactive_print_helper(std::string tag) {
 #if MXNET_USE_CUDA
     if (tb_.dev_mask() == gpu::kDevMask) {
       TensorInspector(test::CAccessAsCPU(ctx_, tb_, false)(), ctx_)
@@ -322,7 +322,8 @@ class TensorInspector {
             InspectorManager::get()->interactive_print_tag_counter_[tag] <<  std::endl;
       }
       tensor_info_to_string<DType>(&std::cout);
-      std::cout << "Please specify the position, seperated by \",\"" << std::endl;
+      std::cout << "To print a part of the tensor, " <<
+          "please specify a position, seperated by \",\"" << std::endl;
       std::cout << "\"e\" for the entire tensor, " <<
           "\"d\" to dump value to file, " <<
           "\"b\" to break, " <<
@@ -350,10 +351,10 @@ class TensorInspector {
         }
         continue;
       }
-      std::vector<int> pos;
+      std::vector<index_t> pos;
       if (parse_position(&pos, str)) {
-        std::vector<int> sub_shape;
-        size_t offset;
+        std::vector<index_t> sub_shape;
+        index_t offset;
         print_locator(pos, &sub_shape, &offset);
         to_string_helper<DType>(&std::cout, sub_shape, offset);
       } else {
@@ -368,7 +369,7 @@ class TensorInspector {
    * \param ct the type of the checker
    */
   template<typename DType>
-  inline std::function<bool(DType)> get_checker(CheckerType ct) {
+  std::function<bool(DType)> get_checker(CheckerType ct) {
     switch (ct) {
       case NegativeChecker:
         return [] (DType x) {
@@ -397,7 +398,7 @@ class TensorInspector {
         if (std::is_same<DType, float>::value || std::is_same<DType, double>::value ||
             std::is_same<DType, mshadow::half::half_t>::value) {
           return [] (DType x) {
-                return x == (DType)1.0 / (DType)0.0 || x == -(DType)1.0 / (DType)0.0;
+                return x == (DType)1.0 / 0.0f || x == -(DType)1.0 / 0.0f;
               };
         } else {
           LOG(WARNING) << "InfChecker only applies to float types. " <<
@@ -408,7 +409,7 @@ class TensorInspector {
         if (std::is_same<DType, float>::value || std::is_same<DType, double>::value ||
             std::is_same<DType, mshadow::half::half_t>::value) {
           return [] (DType x) {
-                return x == (DType)1.0 / (DType)0.0;
+                return x == (DType)1.0 /  0.0f;
               };
         } else {
           LOG(WARNING) << "PositiveInfChecker only applies to float types. " <<
@@ -419,7 +420,7 @@ class TensorInspector {
         if (std::is_same<DType, float>::value || std::is_same<DType, double>::value ||
             std::is_same<DType, mshadow::half::half_t>::value) {
           return [] (DType x) {
-                return x == -(DType)1.0 / (DType)0.0;
+                return x == -(DType)1.0 /  0.0f;
               };
         } else {
           LOG(WARNING) << "NegativeInfChecker only applies to float types. " <<
@@ -430,7 +431,7 @@ class TensorInspector {
         if (std::is_same<DType, float>::value || std::is_same<DType, double>::value ||
             std::is_same<DType, mshadow::half::half_t>::value) {
           return [] (DType x) {
-                return x != (DType)1.0 / (DType)0.0 && x != -(DType)1.0 / (DType)0.0;
+                return x != (DType)1.0 /  0.0f && x != -(DType)1.0 /  0.0f;
               };
         } else {
           LOG(WARNING) << "FiniteChecker only applies to float types. " <<
@@ -441,7 +442,7 @@ class TensorInspector {
         if (std::is_same<DType, float>::value || std::is_same<DType, double>::value ||
             std::is_same<DType, mshadow::half::half_t>::value) {
           return [] (DType x) {
-                return x != (DType)1.0 / (DType)0.0 && x != -(DType)1.0 / (DType)0.0 &&
+                return x != (DType)1.0 /  0.0f && x != -(DType)1.0 /  0.0f &&
                     x == x;
               };
         } else {
@@ -453,7 +454,7 @@ class TensorInspector {
         if (std::is_same<DType, float>::value || std::is_same<DType, double>::value ||
             std::is_same<DType, mshadow::half::half_t>::value) {
           return [] (DType x) {
-                return x == (DType)1.0 / (DType)0.0 || x == -(DType)1.0 / (DType)0.0 ||
+                return x == (DType)1.0 /  0.0f || x == -(DType)1.0 /  0.0f ||
                     x != x;
               };
         } else {
@@ -473,10 +474,10 @@ class TensorInspector {
    * \brief calculate the coordinate of a value in the tensor, given its index
    * \param idx the index of the value in the tensor
    */
-  inline std::vector<int> index_to_coordinates(size_t idx) {
+  std::vector<index_t> index_to_coordinates(index_t idx) {
     const int dimension = tb_.ndim();
-    std::vector<int> ret;
-    for (int i = dimension-1; i >= 0; --i) {
+    std::vector<index_t> ret;
+    for (int i = dimension - 1; i >= 0; --i) {
       ret.push_back(idx % tb_.shape_[i]);
       idx /= tb_.shape_[i];
     }
@@ -494,7 +495,7 @@ class TensorInspector {
    * \param tag the name given to this call
    */
   template<typename DType>
-  inline void check_value_helper(std::vector<std::vector<int>>* ret,
+  void check_value_helper(std::vector<std::vector<index_t>>* ret,
       const std::function<bool(DType)>& checker, bool interactive, std::string tag) {
 #if MXNET_USE_CUDA
     if (tb_.dev_mask() == gpu::kDevMask) {
@@ -502,20 +503,20 @@ class TensorInspector {
           .check_value_helper<DType>(ret, checker, interactive, tag);
     }
 #endif  // MXNET_USE_CUDA
-    size_t count = 0;
+    index_t count = 0;
     std::stringstream ss;
     ss << "[";
     bool first_pass = true;
-    for (size_t i = 0; i < tb_.shape_.Size(); ++i) {
+    for (index_t i = 0; i <static_cast<index_t>(tb_.shape_.Size()); ++i) {
       if (checker(tb_.dptr<DType>()[i])) {
-        count += 1;
+        ++count;
         if (!first_pass) {
           ss  << ", ";
         }
         first_pass = false;
-        std::vector<int> coords = index_to_coordinates(i);
+        std::vector<index_t> coords = index_to_coordinates(i);
         ss << "(" << coords[0];
-        for (unsigned int i = 1; i < coords.size(); ++i) {
+        for (size_t i = 1; i < coords.size(); ++i) {
           ss << ", " << coords[i];
         }
         ss << ")";
@@ -528,22 +529,40 @@ class TensorInspector {
        InspectorManager::get()->check_value_tag_counter_[tag] += 1;
       while (!InspectorManager::get()->check_value_skip_all_) {
         std::cout << "----------Value Check----------" << std::endl;
+        tensor_info_to_string<DType>(&std::cout);
         if (tag != "") {
           std::cout << "Tag: " << tag << "  Visit: " <<
               InspectorManager::get()->check_value_tag_counter_[tag] <<  std::endl;
         }
         std::cout << count << " value(s) found." << std::endl;
-        std::cout << "\"p\" to print the coordinates, " <<
+        std::cout << "To print a part of the tensor," <<
+            " please specify a position, seperated by \",\"" << std::endl;
+        std::cout << "\"e\" for the entire tensor, " <<
+            "\"p\" to print the coordinates of the values found, " <<
             "\"b\" to break, " <<
             "\"s\" to skip all: ";
         std::string str;
         std::cin >> str;
         if (str == "b") {
           break;
+        } else if (str == "e") {
+          to_string_helper<DType>(&std::cout);
+          continue;
         } else if (str == "p") {
           std::cout << ss.str() << std::endl;
+          continue;
         } else if (str == "s") {
           InspectorManager::get()->check_value_skip_all_ = true;
+          break;
+        }
+        std::vector<index_t> pos;
+        if (parse_position(&pos, str)) {
+          std::vector<index_t> sub_shape;
+          index_t offset;
+          print_locator(pos, &sub_shape, &offset);
+          to_string_helper<DType>(&std::cout, sub_shape, offset);
+        } else {
+          std::cout << "invalid input" << std::endl;
         }
       }
     }
@@ -565,6 +584,21 @@ class TensorInspector {
   }
 
   /*!
+   * \brief infer the python type, given the c++ type
+   * \tparam ti the type info 
+   */
+  inline std::string infer_type_string(const std::type_info& ti) {
+    if (ti == typeid(float)) return "float";
+    else if (ti == typeid(double)) return "double";
+    else if (ti == typeid(mshadow::half::half_t) ) return "mshasow::half::half_t";
+    else if (ti == typeid(uint8_t)) return "uint8_t";
+    else if (ti == typeid(int32_t)) return "int32_t";
+    else if (ti == typeid(int64_t)) return "int64_t";
+    else
+      return "unknown tyoe";
+  }
+
+  /*!
    * \brief check if the host machine is big or small endian
    */
   inline char endian_test() {
@@ -577,7 +611,7 @@ class TensorInspector {
    * \tparam DType the data type
    */
   template<typename DType>
-  inline std::string get_header() {
+  std::string get_header() {
     const int dimension = tb_.ndim();
     std::string dict;
     dict += "{'descr':'";
@@ -615,7 +649,7 @@ class TensorInspector {
    * \param filename the file name
    */
   template<typename DType>
-  inline void write_npy(const std::string& header, const std::string& filename) {
+  void write_npy(const std::string& header, const std::string& filename) {
     std::ofstream file;
     file.exceptions(std::ofstream::failbit | std::ofstream::badbit);
     try {
@@ -626,7 +660,7 @@ class TensorInspector {
       std::cout << "Tensor dumped to file: " << filename << std::endl;
     } catch (std::ofstream::failure e) {
       std::cerr << "Exception opening/writing/closing file " << filename << std::endl;
-    }    
+    }
   }
 
   /*!
@@ -636,7 +670,7 @@ class TensorInspector {
    * \param tag the name given to this call
    */
   template<typename DType>
-  inline void dump_to_file_helper(const std::string& tag) {
+  void dump_to_file_helper(const std::string& tag) {
 #if MXNET_USE_CUDA
     if (tb_.dev_mask() == gpu::kDevMask) {
       TensorInspector(test::CAccessAsCPU(ctx_, tb_, false)(), ctx_)
@@ -649,6 +683,18 @@ class TensorInspector {
     const int visit = InspectorManager::get()->dump_to_file_tag_counter_[tag];
     std::string filename = tag + "_" + std::to_string(visit) + ".npy";
     write_npy<DType>(header, filename);
+  }
+
+   /*!
+   * \brief validate that the shape
+   */
+  inline void validate_shape() {
+    const int dimension = tb_.ndim();
+    CHECK(dimension > 0) << "Tensor Inspector does not support empty tensors " <<
+        "or tensors of unknow shape.";
+    for (int i = 0; i < dimension; ++i) {
+      CHECK(tb_.shape_[i] != 0) << "Invalid tensor shape: shape_[" << i << "] is 0";
+    }
   }
 
   /* !\brief the tensor blob */
@@ -667,7 +713,9 @@ class TensorInspector {
    */
   template<typename Device, int dimension, typename DType>
   TensorInspector(const mshadow::Tensor<Device, dimension, DType>& ts, const RunContext& ctx):
-      tb_(ts), ctx_(ctx) {}
+      tb_(ts), ctx_(ctx) {
+    validate_shape();
+  }
 
   /*!
    * \brief construct from TBlob object
@@ -675,7 +723,9 @@ class TensorInspector {
    * \param ctx the run context of the tensor
    */
   TensorInspector(const TBlob& tb, const RunContext& ctx):
-      tb_(tb), ctx_(ctx) {}
+      tb_(tb), ctx_(ctx) {
+    validate_shape();
+  }
 
   /*!
    * \brief construct from NDArray object. Currently this only works with kDefaultStorage
@@ -683,19 +733,21 @@ class TensorInspector {
    * \param ctx the run context of the tensor
    */
   TensorInspector(const NDArray& arr, const RunContext& ctx):
-      tb_(arr.data()), ctx_(ctx) {}
+      tb_(arr.data()), ctx_(ctx) {
+    validate_shape();
+  }
 
   /*!
    * \brief print the tensor to std::cout
    */
-  inline void print_string() {
+  void print_string() {
     std::cout << to_string() << std::endl;
   }
 
   /*!
    * \brief return a string which contains the values and other info of the tensor
    */
-  inline std::string to_string() {
+  std::string to_string() {
     std::stringstream ss;
     MSHADOW_TYPE_SWITCH(tb_.type_flag_, DType, {
       to_string_helper<DType>(&ss);
@@ -707,7 +759,7 @@ class TensorInspector {
    * \brief interactively print the tensor value
    * \param tag the name given to this call
    */
-  inline void interactive_print(std::string tag = "") {
+  void interactive_print(std::string tag = "") {
     MSHADOW_TYPE_SWITCH(tb_.type_flag_, DType, {
       interactive_print_helper<DType>(tag);
     });
@@ -722,9 +774,9 @@ class TensorInspector {
    * \param tag the name given to this call
    */
   template<typename ValueChecker>
-  inline std::vector<std::vector<int>> check_value(const ValueChecker& checker,
+  std::vector<std::vector<index_t>> check_value(const ValueChecker& checker,
       bool interactive = false, std::string tag = "") {
-    std::vector<std::vector<int>> ret;
+    std::vector<std::vector<index_t>> ret;
     MSHADOW_TYPE_SWITCH(tb_.type_flag_, DType, {
       check_value_helper<DType>(&ret, checker, ret, interactive, tag);
     });
@@ -738,9 +790,9 @@ class TensorInspector {
    * \param interactive wherether to allow the user to interactively check the coordinates
    * \param tag the name given to this call
    */
-  inline std::vector<std::vector<int>> check_value(CheckerType ct, bool interactive = false,
+  std::vector<std::vector<index_t>> check_value(CheckerType ct, bool interactive = false,
       std::string tag = "") {
-    std::vector<std::vector<int>> ret;
+    std::vector<std::vector<index_t>> ret;
     MSHADOW_TYPE_SWITCH(tb_.type_flag_, DType, {
       check_value_helper<DType>(&ret, get_checker<DType>(ct), interactive, tag);
     });
@@ -751,7 +803,7 @@ class TensorInspector {
    * \brief dump the value of the tensor to a file with name "tag_[visit count].npy" in npy format
    * \param tag the name given to this call
    */
-  inline void dump_to_file(std::string tag) {
+  void dump_to_file(std::string tag) {
     MSHADOW_TYPE_SWITCH(tb_.type_flag_, DType, {
       dump_to_file_helper<DType>(tag);
     });
