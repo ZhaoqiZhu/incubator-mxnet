@@ -275,13 +275,15 @@ def test_aggregate_duplication():
     file_name = 'test_aggregate_duplication.json'
     enable_profiler(profile_filename = file_name, run=True, continuous_dump=True, \
                     aggregate_stats=True)
+    # clear aggregate stats
+    profiler.dumps(reset = True)
     inp = mx.nd.zeros(shape=(100, 100))
     y = mx.nd.sqrt(inp)
     inp = inp + 1
     inp = inp + 1
     mx.nd.waitall()
     profiler.dump(False)
-    debug_str = profiler.dumps(format = 'json', reset = True)
+    debug_str = profiler.dumps(format = 'json')
     target_dict = json.loads(debug_str)
     assert 'Time' in target_dict and 'operator' in target_dict['Time'] \
         and 'sqrt' in target_dict['Time']['operator'] \
@@ -332,6 +334,8 @@ def test_custom_operator_profiling(seed = None, file_name = None):
         file_name = 'test_custom_operator_profiling.json'
     enable_profiler(profile_filename = file_name, run=True, continuous_dump=True,\
                     aggregate_stats=True)
+    # clear aggregate stats
+    profiler.dumps(reset = True)
     x = mx.nd.array([0, 1, 2, 3])
     x.attach_grad()
     with mx.autograd.record():
@@ -339,7 +343,7 @@ def test_custom_operator_profiling(seed = None, file_name = None):
     y.backward()
     mx.nd.waitall()
     profiler.dump(False)
-    debug_str = profiler.dumps(format = 'json', reset = True)
+    debug_str = profiler.dumps(format = 'json')
     target_dict = json.loads(debug_str)
     assert 'Time' in target_dict and 'Custom Operator' in target_dict['Time'] \
         and 'MySigmoid::pure_python' in target_dict['Time']['Custom Operator'] \
@@ -401,6 +405,8 @@ def custom_operator_profiling_multiple_custom_ops(seed, mode, file_name):
 
     enable_profiler(profile_filename = file_name, run=True, continuous_dump=True,\
                     aggregate_stats=True)
+    # clear aggregate stats
+    profiler.dumps(reset = True)
     inp = mx.nd.zeros(shape=(100, 100))
     if mode == 'imperative':
         y = mx.nd.Custom(inp, op_type='MyAdd1')
@@ -413,7 +419,7 @@ def custom_operator_profiling_multiple_custom_ops(seed, mode, file_name):
         c.bind(mx.cpu(), {'a': inp}).forward()
     mx.nd.waitall()
     profiler.dump(False)
-    debug_str = profiler.dumps(format = 'json', reset = True)
+    debug_str = profiler.dumps(format = 'json')
     check_custom_operator_profiling_multiple_custom_ops_output(debug_str)
     profiler.set_state('stop')
     
