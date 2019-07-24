@@ -281,7 +281,7 @@ def test_aggregate_duplication():
     inp = inp + 1
     mx.nd.waitall()
     profiler.dump(False)
-    debug_str = profiler.dumps(format = 'json')
+    debug_str = profiler.dumps(format = 'json', reset = True)
     target_dict = json.loads(debug_str)
     assert 'Time' in target_dict and 'operator' in target_dict['Time'] \
         and 'sqrt' in target_dict['Time']['operator'] \
@@ -413,7 +413,6 @@ def custom_operator_profiling_multiple_custom_ops(seed, mode, file_name):
         c.bind(mx.cpu(), {'a': inp}).forward()
     mx.nd.waitall()
     profiler.dump(False)
-    print(profiler.dumps())
     debug_str = profiler.dumps(format = 'json', reset = True)
     check_custom_operator_profiling_multiple_custom_ops_output(debug_str)
     profiler.set_state('stop')
@@ -433,10 +432,10 @@ def test_custom_operator_profiling_naive_engine():
             {'MXNET_ENGINE_TYPE' : "NaiveEngine"}, \
             'test_custom_operator_profiling_naive.json')
     run_in_spawned_process(custom_operator_profiling_multiple_custom_ops, \
-            {'MXNET_ENGINE_TYPE' : "NaiveEngine"}, None, 'imperative', \
+            {'MXNET_ENGINE_TYPE' : "NaiveEngine"}, 'imperative', \
             'test_custom_operator_profiling_multiple_custom_ops_imperative_naive.json')
     run_in_spawned_process(custom_operator_profiling_multiple_custom_ops, \
-            {'MXNET_ENGINE_TYPE' : "NaiveEngine"}, None, 'symbolic', \
+            {'MXNET_ENGINE_TYPE' : "NaiveEngine"}, 'symbolic', \
             'test_custom_operator_profiling_multiple_custom_ops_symbolic_naive.json')
 
 if __name__ == '__main__':
