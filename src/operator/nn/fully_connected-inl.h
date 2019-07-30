@@ -98,7 +98,7 @@ void FCForward(const OpContext &ctx, const FullyConnectedParam &param,
   Tensor<xpu, 2, DType> wmat = in_data[fullc::kWeight].get<xpu, 2, DType>(s);
   Tensor<xpu, 2, DType> data, out;
 
-  TensorInspector ts(wmat, ctx.run_ctx);
+  // TensorInspector ts(wmat, ctx.run_ctx);
   // ts.interactive_print(ctx.run_ctx);
 
   if (!param.flatten) {

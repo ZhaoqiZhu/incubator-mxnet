@@ -131,7 +131,7 @@ class CuDNNActivationOp {
     #endif
 
     TensorInspector ti(out, ctx.run_ctx);
-    ti.check_value(CheckerType::NormalChecker, true, "cudnn activation normal check");
+    ti.check_value(CheckerType::PositiveChecker, true, "cudnn activation positive check");
     ti.dump_to_file("activation");
     ti.interactive_print("cudnn activation");
   }
