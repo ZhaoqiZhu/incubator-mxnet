@@ -259,13 +259,13 @@ class TensorInspector {
     const int sub_dim = dimension - pos.size();
     sub_shape->resize(sub_dim);
     index_t multiple = 1;
-    for (int i = pos.size(), j = 0; i < dimension; ++i, ++j) {
+    for (size_t i = pos.size(), j = 0; i < static_cast<size_t>(dimension); ++i, ++j) {
       (*sub_shape)[j] = tb_.shape_[i];
       multiple *= tb_.shape_[i];
     }
     index_t sum = 0;
     index_t m = 1;
-    for (int i = pos.size() - 1; i >= 0; --i) {
+    for (index_t i = pos.size() - 1; i >= 0; --i) {
       sum += pos[i] * m;
       m *= tb_.shape_[i];
     }
@@ -291,8 +291,8 @@ class TensorInspector {
     if (pos->size() > static_cast<size_t>(dimension)) {
       return false;
     }
-    for (unsigned i = 0; i < pos->size(); ++i) {
-      if ((*pos)[i] > (tb_.shape_[i] - 1)) {
+    for (size_t i = 0; i < pos->size(); ++i) {
+      if ((*pos)[i] > (tb_.shape_[i] - 1) || (*pos)[i] < 0) {
         return false;
       }
     }
@@ -343,7 +343,7 @@ class TensorInspector {
           std::cout << "Please enter a tag: ";
           std::cin >> str;
           if (str.find(' ') != std::string::npos) {
-            std::cout << "Invalid input. ";
+            std::cout << "Invalid tag name. No space allowed.";
             continue;
           }
           dump_to_file_helper<DType>(str);
@@ -358,7 +358,7 @@ class TensorInspector {
         print_locator(pos, &sub_shape, &offset);
         to_string_helper<DType>(&std::cout, sub_shape, offset);
       } else {
-        std::cout << "invalid input" << std::endl;
+        std::cout << "invalid command/indices" << std::endl;
       }
     }
   }
@@ -562,7 +562,7 @@ class TensorInspector {
           print_locator(pos, &sub_shape, &offset);
           to_string_helper<DType>(&std::cout, sub_shape, offset);
         } else {
-          std::cout << "invalid input" << std::endl;
+          std::cout << "invalid command/indices" << std::endl;
         }
       }
     }
